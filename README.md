@@ -1,22 +1,18 @@
-# Rooter
+# Dirmark
 
-Rooter changes the working directory to the project root when you open a file or directory.
+Dirmark changes the working directory based on links from shell directory bookmark progams.
 
-The project root can be identified by:
+Currently the following bookmark progams are supported:
 
-- being a known directory;
-- having a known directory or file;
-- being a subdirectory of a known directory.
-- being a direct subdirectory of a known directory
+- bashmark;
 
-You can also exclude directories.
-
-For a file or directory which doesn't have a root, Rooter can: do nothing; change to the file's directory (similar to `autochdir`); or change to your home directory.
 
 
 ## Usage
 
-By default you don't need to do anything: Rooter will change the working directory automatically and echo the new working directory.
+`:DirmarkGo src`
+
+By default you don't need to do anything: Dirmark will change the working directory automatically to the value poirted at by src.
 
 You can turn this off (see below) and use the `:Rooter` command to invoke Rooter manually.
 
@@ -34,7 +30,7 @@ By default all files and directories trigger Rooter.  Configure a comma separate
 
 ```viml
 " Everything (default)
-let g:rooter_targets = '/,*'
+let g:dirmark_sdirs = '$HOME/.sdirs'
 
 " All files
 let g:rooter_targets = '*'

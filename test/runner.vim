@@ -82,6 +82,10 @@ if argc() > 1
   let s:tests = filter(s:tests, 'v:val =~ argv(1)')
 endif
 
+if exists("*SuiteSetUp")
+  call SuiteSetUp()
+endif
+
 " Run the tests in random order.
 for test in Shuffle(s:tests)
   call RunTest(test)
@@ -103,6 +107,10 @@ for test in Shuffle(s:tests)
   endif
 endfor
 
+if exists("*SuiteTearDown")
+  call SuiteTearDown()
+endif
+
 let summary = [
       \ s:done.(  s:done   == 1 ? ' test'    : ' tests'),
       \ s:errors.(s:errors == 1 ? ' error'   : ' errors'),
@@ -111,9 +119,8 @@ let summary = [
 call Log('')
 call Log(join(summary, ', '))
 
-split messages.log
-call append(line('$'), s:messages)
-write
+call writefile(s:messages, 'messages.log' )
 
-qall!
+sleep 1m
+q
 
