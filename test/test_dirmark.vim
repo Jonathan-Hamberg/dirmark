@@ -6,6 +6,7 @@ function SuiteSetUp()
   call mkdir('tmp/dst/test', 'p')
   call mkdir('tmp/tofish', 'p')
   call mkdir('tmp/bashmarks', 'p')
+  call mkdir('tmp/zshmarks', 'p')
 
   " create common paths for destination directories
   let target_dir = dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test')
@@ -26,6 +27,13 @@ function SuiteSetUp()
   call system("ln -s " . target_dir . " " . tofish_src2)
 
   let g:dirmark_to_dir = to_dir
+
+  " create zshmarks .bookmarks file for testing.
+  let zshmarks_path = dirmark#joinPath(s:cwd, 'tmp', 'zshmarks', '.bookmarks')
+  let zshmarks_entries = [target_dir . '|test', target_dir . '|zshmarks_test']
+  call writefile(zshmarks_entries, zshmarks_path)
+
+  let g:dirmark_zshmarks=zshmarks_path
 
 endfunction
 
@@ -50,6 +58,14 @@ function Test_go_bashmarks()
     call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
 endfunction
 
+function Test_go_zshmarks()
+    let success = dirmark#ZshmarksGo('test')
+    call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
+
+    call dirmark#ZshmarksGo('zshmarks_test')
+    call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
+endfunction
+
 function Test_list_tofish()
     let m = dirmark#TofishList()
 
@@ -62,6 +78,13 @@ function Test_list_bashmarks()
 
     call assert_equal(m['test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
     call assert_equal(m['bashmarks_test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
+endfunction
+
+function Test_list_zshmarks()
+    let m = dirmark#ZshmarksList()
+
+    call assert_equal(m['test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
+    call assert_equal(m['zshmarks_test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
 endfunction
 
 function Test_go_tofish()

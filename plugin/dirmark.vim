@@ -10,6 +10,7 @@ let g:loaded_dirmark = 1
 
 let g:dirmark_to_dir = get(g:, 'dirmark_to_dir', '$HOME/.tofish')
 let g:dirmark_sdirs = get(g:, 'dirmark_sdirs', '$HOME/.sdirs')
+let g:dirmark_zshmarks = get(g:, 'dirmark_zshmarks', '$HOME/.bookmarks')
 
 func! s:msg_error(msg) abort
   redraw | echohl ErrorMsg | echomsg 'dirmark:' a:msg | echohl None
@@ -124,11 +125,45 @@ function! dirmark#BashmarksGo(name)
     endif
 endfunction
 
+function! dirmark#ZshmarksList()
+    let m = {}
+    for line in readfile(resolve(g:dirmark_zshmarks))
+        let s = split(line, '|')
+        let name = s[1]
+        let resolved = s[0]
+        let m[name] = resolved
+    endfor
+    return m
+endfunction
+
+function! dirmark#ZshmarksGo(name)
+    let m = dirmark#ZshmarksList()
+
+    if !m->has_key(a:name)
+        call s:msg_error("bookmark not found: " . a:name)
+        return 0
+    endif
+
+    let dir = m[a:name]
+
+    if isdirectory(dir)
+        execute 'cd ' . dir
+        return 1
+    else
+        call s:msg_error("directory not found: " . dir)
+        return 0
+    endif
+endfunction
+
 function! DirmarkGo(name)
     let ret = dirmark#TofishGo(a:name)
-    if ret == 0
+    if ret != 0
         let ret = dirmark#BashmarksGo(a:name)
     endif
+    if ret != 0
+        let ret = dirmark#ZshmarksGo(a:name)
+    endif
+    return ret
 endfunction
 
 command! -nargs=1 DirmarkGo call DirmarkGo(<f-args>)
