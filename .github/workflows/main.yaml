@@ -1,0 +1,17 @@
+name: dirmark
+on: push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    container: ghcr.io/jonathan-hamberg/dirmark
+    steps:
+    - uses: actions/checkout@v2
+    - run: bash --version
+    - run: fish --version
+    - run: zsh --version
+    - run: vim --version
+    - run: nvim --version
+    - run: ls
+    - run: pwd
+    - run: make test_all

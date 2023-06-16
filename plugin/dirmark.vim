@@ -8,6 +8,9 @@ if exists('g:loaded_dirmark')
 endif
 let g:loaded_dirmark = 1
 
+let g:dirmark_to_dir = get(g:, 'dirmark_to_dir', '$HOME/.tofish')
+let g:dirmark_sdirs = get(g:, 'dirmark_sdirs', '$HOME/.sdirs')
+
 func! s:msg_error(msg) abort
   redraw | echohl ErrorMsg | echomsg 'dirmark:' a:msg | echohl None
 endf
@@ -60,49 +63,71 @@ function! dirmark#joinPath(...)
 	return resPath
 endfunction	
 
-function! dirmark#TofishExists()
-    let out = system('type -t to')
-    call Log(out)
-    call Log(v:shell_error)
-    return  v:shell_error == 0
+function! dirmark#TofishList()
+    let m = {}
+    for fname in readdir(resolve(g:dirmark_to_dir))
+        let resolved = trim(system('readlink ' . dirmark#joinPath(g:dirmark_to_dir, fname)))
+
+        let m[fname] = resolved
+    endfor
+
+    return m 
 endfunction
 
 function! dirmark#TofishGo(name)
-    let dir = trim(system('to resolve ' . a:name))
+    let m = dirmark#TofishList()
 
-    call Log(dir)
+    if !m->has_key(a:name)
+        call s:msg_error("bookmark not found: " . a:name)
+        return 0
+    endif
+
+    let dir = m[a:name]
+
     if isdirectory(dir)
         execute 'cd ' . dir
         return 1
     else
-        call s:msg_error("directory not found: b" . dir . "b")
+        call s:msg_error("directory not found: " . dir)
         return 0
     endif
 
 endfunction
 
-function! dirmark#BashmarksExists()
-    let out = system('type -t g')
-    call Log(out)
-    call Log(v:shell_error)
-    return  v:shell_error == 0
+function! dirmark#BashmarksList()
+    let m = {}
+    for line in readfile(resolve(g:dirmark_sdirs))
+        let s = split(line, '=')
+        let name = s[0][11:]
+        let resolved = join(s[1:], '=')
+        let m[name] = resolved
+    endfor
+    return m
 endfunction
 
 function! dirmark#BashmarksGo(name)
-    let dir = trim(system('p ' . a:name))
+    let m = dirmark#BashmarksList()
+
+    if !m->has_key(a:name)
+        call s:msg_error("bookmark not found: " . a:name)
+        return 0
+    endif
+
+    let dir = m[a:name]
 
     if isdirectory(dir)
         execute 'cd ' . dir
+        return 1
     else
-        call s:msg_error("bookmark not found")
+        call s:msg_error("directory not found: " . dir)
+        return 0
     endif
 endfunction
 
 function! DirmarkGo(name)
-    if dirmark#TofishExists()
-        call dirmark#TofishGo(a:name)
-    elseif dirmark#BashmarksExists() 
-        call dirmark#BashmarksGo(a:name)
+    let ret = dirmark#TofishGo(a:name)
+    if ret == 0
+        let ret = dirmark#BashmarksGo(a:name)
     endif
 endfunction
 

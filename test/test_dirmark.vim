@@ -12,21 +12,24 @@ function SuiteSetUp()
 
   " create .sdirs file for testing.
   let sdirs_path = dirmark#joinPath(s:cwd, 'tmp', 'bashmarks', '.sdirs')
-  let sdir_entries = ['export DIR_test=' . target_dir, 'export DIR_bashmark_test=' . target_dir]
-
+  let sdir_entries = ['export DIR_test=' . target_dir, 'export DIR_bashmarks_test=' . target_dir]
   call writefile(sdir_entries, sdirs_path)
 
+  let g:dirmark_sdirs = sdirs_path
+
   " create tofish files for testing.
+  let to_dir = dirmark#joinPath(s:cwd, 'tmp', 'tofish')
   let tofish_src1 = dirmark#joinPath(s:cwd, 'tmp', 'tofish', 'test')
   let tofish_src2 = dirmark#joinPath(s:cwd, 'tmp', 'tofish', 'tofish_test')
 
   call system("ln -s " . target_dir . " " . tofish_src1)
   call system("ln -s " . target_dir . " " . tofish_src2)
 
+  let g:dirmark_to_dir = to_dir
+
 endfunction
 
 function SuiteTearDown()
-  call Log("SuiteTearDown")
   execute 'cd' s:cwd
 
   call delete('tmp', 'rf')
@@ -40,25 +43,34 @@ function TearDown()
 endfunction
 
 function Test_go_bashmarks()
-    if dirmark#BashmarksExists()
-        let success = dirmark#BashmarksGo('test')
-        call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
+    let success = dirmark#BashmarksGo('test')
+    call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
 
-        call dirmark#BashmarksGo('bashmarks_test')
-        call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
-    endif
+    call dirmark#BashmarksGo('bashmarks_test')
+    call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
+endfunction
+
+function Test_list_tofish()
+    let m = dirmark#TofishList()
+
+    call assert_equal(m['test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
+    call assert_equal(m['tofish_test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
+endfunction
+
+function Test_list_bashmarks()
+    let m = dirmark#BashmarksList()
+
+    call assert_equal(m['test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
+    call assert_equal(m['bashmarks_test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
 endfunction
 
 function Test_go_tofish()
-    if dirmark#TofishExists()
-        let success = dirmark#TofishGo('test')
-        call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
+    let success = dirmark#TofishGo('test')
+    call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
 
-        call dirmark#TofishGo('tofish_test')
-        call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
-    endif
+    call dirmark#TofishGo('tofish_test')
+    call assert_equal(dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'), getcwd())
 endfunction
-
 
 function Test_dirmark_go()
     call DirmarkGo('test')

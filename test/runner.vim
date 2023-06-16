@@ -122,5 +122,11 @@ call Log(join(summary, ', '))
 call writefile(s:messages, 'messages.log' )
 
 sleep 1m
+
+
+if s:errors != 1 || s:fail != 1
+    echoerr 'test failed'
+    throw l:output
+endif
 q
 
