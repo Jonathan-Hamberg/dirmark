@@ -8,7 +8,7 @@ if exists('g:loaded_dirmark')
 endif
 let g:loaded_dirmark = 1
 
-let g:dirmark_to_dir = get(g:, 'dirmark_to_dir', '$HOME/.tofish')
+let g:dirmark_todir = get(g:, 'dirmark_todir', '$HOME/.tofish')
 let g:dirmark_sdirs = get(g:, 'dirmark_sdirs', '$HOME/.sdirs')
 let g:dirmark_zshmarks = get(g:, 'dirmark_zshmarks', '$HOME/.bookmarks')
 
@@ -66,8 +66,16 @@ endfunction
 
 function! dirmark#TofishList()
     let m = {}
-    for fname in readdir(resolve(g:dirmark_to_dir))
-        let resolved = trim(system('readlink ' . dirmark#joinPath(g:dirmark_to_dir, fname)))
+
+    let db = resolve(expand(g:dirmark_todir))
+
+    " If file doesn't exist return empty dictionary.
+    if !isdirectory(db)
+        return m
+    endif
+
+    for fname in readdir(db)
+        let resolved = trim(system('readlink ' . dirmark#joinPath(g:dirmark_todir, fname)))
 
         let m[fname] = resolved
     endfor
@@ -97,7 +105,15 @@ endfunction
 
 function! dirmark#BashmarksList()
     let m = {}
-    for line in readfile(resolve(g:dirmark_sdirs))
+
+    let db = expand(g:dirmark_sdirs)
+
+    " If file doesn't exist return empty dictionary.
+    if !filereadable(db)
+        return m
+    endif
+
+    for line in readfile(db)
         let s = split(line, '=')
         let name = s[0][11:]
         let resolved = join(s[1:], '=')
@@ -127,7 +143,14 @@ endfunction
 
 function! dirmark#ZshmarksList()
     let m = {}
-    for line in readfile(resolve(g:dirmark_zshmarks))
+
+    " If file doesn't exist return empty dictionary.
+    let db = expand(g:dirmark_zshmarks)
+    if !filereadable(db)
+        return m
+    endif
+
+    for line in readfile(db)
         let s = split(line, '|')
         let name = s[1]
         let resolved = s[0]
@@ -156,14 +179,28 @@ function! dirmark#ZshmarksGo(name)
 endfunction
 
 function! DirmarkGo(name)
-    let ret = dirmark#TofishGo(a:name)
-    if ret != 0
-        let ret = dirmark#BashmarksGo(a:name)
+
+    let m_tofish = dirmark#TofishList()
+    let m_bashmarks = dirmark#BashmarksList()
+    let m_zshmarks = dirmark#ZshmarksList()
+
+    let m = extend(m_tofish, m_bashmarks)
+    let m = extend(m, m_zshmarks)
+
+    if !m->has_key(a:name)
+        call s:msg_error("bookmark not found: " . a:name)
+        return 0
     endif
-    if ret != 0
-        let ret = dirmark#ZshmarksGo(a:name)
+
+    let dir = expand(m[a:name])
+
+    if isdirectory(dir)
+        execute 'cd ' . dir
+        return 1
+    else
+        call s:msg_error("directory not found: " . dir)
+        return 0
     endif
-    return ret
 endfunction
 
 command! -nargs=1 DirmarkGo call DirmarkGo(<f-args>)

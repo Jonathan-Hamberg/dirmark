@@ -1,4 +1,3 @@
-set noswapfile
 function SuiteSetUp()
 
   let s:cwd = getcwd()
@@ -16,8 +15,6 @@ function SuiteSetUp()
   let sdir_entries = ['export DIR_test=' . target_dir, 'export DIR_bashmarks_test=' . target_dir]
   call writefile(sdir_entries, sdirs_path)
 
-  let g:dirmark_sdirs = sdirs_path
-
   " create tofish files for testing.
   let to_dir = dirmark#joinPath(s:cwd, 'tmp', 'tofish')
   let tofish_src1 = dirmark#joinPath(s:cwd, 'tmp', 'tofish', 'test')
@@ -26,14 +23,14 @@ function SuiteSetUp()
   call system("ln -s " . target_dir . " " . tofish_src1)
   call system("ln -s " . target_dir . " " . tofish_src2)
 
-  let g:dirmark_to_dir = to_dir
-
   " create zshmarks .bookmarks file for testing.
   let zshmarks_path = dirmark#joinPath(s:cwd, 'tmp', 'zshmarks', '.bookmarks')
   let zshmarks_entries = [target_dir . '|test', target_dir . '|zshmarks_test']
   call writefile(zshmarks_entries, zshmarks_path)
 
-  let g:dirmark_zshmarks=zshmarks_path
+  let s:dirmark_zshmarks=zshmarks_path
+  let s:dirmark_todir=to_dir
+  let s:dirmark_sdirs=sdirs_path
 
 endfunction
 
@@ -44,6 +41,9 @@ function SuiteTearDown()
 endfunction
 
 function SetUp()
+  let g:dirmark_zshmarks=s:dirmark_zshmarks
+  let g:dirmark_todir=s:dirmark_todir
+  let g:dirmark_sdirs=s:dirmark_sdirs
 endfunction
 
 function TearDown()
@@ -78,6 +78,30 @@ function Test_list_bashmarks()
 
     call assert_equal(m['test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
     call assert_equal(m['bashmarks_test'], dirmark#joinPath(s:cwd, 'tmp', 'dst', 'test'))
+endfunction
+
+function Test_list_user_bashmarks()
+    let g:dirmark_sdirs = '$HOME/.sdirs'
+    let m = dirmark#BashmarksList()
+    for [key, value] in items(m)
+        call Log(key .. ': ' .. value)
+    endfor
+endfunction
+
+function Test_list_user_tofish()
+    let g:dirmark_todir = '$HOME/.tofish'
+    let m = dirmark#TofishList()
+    for [key, value] in items(m)
+        call Log(key .. ': ' .. value)
+    endfor
+endfunction
+
+function Test_list_user_zshmarks()
+    let g:dirmark_zshmarks = '$HOME/.bookmarks'
+    let m = dirmark#ZshmarksList()
+    for [key, value] in items(m)
+        call Log(key .. ': ' .. value)
+    endfor
 endfunction
 
 function Test_list_zshmarks()
